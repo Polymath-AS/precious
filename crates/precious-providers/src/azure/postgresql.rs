@@ -138,15 +138,21 @@ impl PostgresqlFlexibleServerModel {
                 name: SmolStr::new(format!("Compute ({sku_name})")),
                 unit: BillingPeriod::Hour,
                 quantity: monthly_hours,
+                quantity_unit: SmolStr::new("hours"),
                 unit_price: compute_unit_price.price,
                 monthly_cost: Money::usd(compute_monthly_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             },
             CostComponent {
                 name: SmolStr::new("Storage"),
                 unit: BillingPeriod::GBMonth,
                 quantity: storage_gb,
+                quantity_unit: SmolStr::new("GB/month"),
                 unit_price: storage_unit_price.price,
                 monthly_cost: Money::usd(storage_monthly_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             },
         ])
     }

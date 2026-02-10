@@ -26,8 +26,11 @@ impl LogAnalyticsWorkspaceModel {
             name: SmolStr::new("Data ingestion (pay-as-you-go)"),
             unit: BillingPeriod::GBMonth,
             quantity: Decimal::ZERO,
+            quantity_unit: SmolStr::new("GB/month"),
             unit_price: Money::usd(per_gb_price),
             monthly_cost: Money::zero(),
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

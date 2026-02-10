@@ -35,8 +35,11 @@ impl PrivateEndpointModel {
             name: SmolStr::new("Private Endpoint"),
             unit: BillingPeriod::Hour,
             quantity: monthly_hours,
+            quantity_unit: SmolStr::new("hours"),
             unit_price: unit_price.price,
             monthly_cost: Money::usd(monthly_cost),
+            quantity_max: None,
+            monthly_cost_max: None,
         }];
 
         if let Some(inbound_gb) = usage.and_then(|u| u.get_metric("inbound_data_gb")) {
@@ -56,8 +59,11 @@ impl PrivateEndpointModel {
                 name: SmolStr::new("Inbound data processing"),
                 unit: BillingPeriod::GBMonth,
                 quantity: inbound_gb,
+                quantity_unit: SmolStr::new("GB/month"),
                 unit_price: data_price.price,
                 monthly_cost: Money::usd(data_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 

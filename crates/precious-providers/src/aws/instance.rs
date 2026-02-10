@@ -66,8 +66,11 @@ impl AwsInstanceModel {
             name: SmolStr::new(format!("Linux/UNIX usage ({instance_type})")),
             unit: BillingPeriod::Hour,
             quantity: monthly_hours,
+            quantity_unit: SmolStr::new("hours"),
             unit_price: unit_price.price,
             monthly_cost: Money::usd(monthly_cost),
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

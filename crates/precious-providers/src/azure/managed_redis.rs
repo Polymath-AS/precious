@@ -88,8 +88,11 @@ impl ManagedRedisModel {
             name: SmolStr::new(format!("Redis cache ({sku_name})")),
             unit: BillingPeriod::Hour,
             quantity: monthly_hours,
+            quantity_unit: SmolStr::new("hours"),
             unit_price: unit_price.price,
             monthly_cost: Money::usd(monthly_cost),
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

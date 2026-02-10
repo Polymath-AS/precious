@@ -47,8 +47,11 @@ impl VitessBranchModel {
             name: SmolStr::new(format!("Scaler Pro ({cluster_size})")),
             unit: BillingPeriod::Month,
             quantity: Decimal::ONE,
+            quantity_unit: SmolStr::new("months"),
             unit_price: unit_price.price,
             monthly_cost: unit_price.price,
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

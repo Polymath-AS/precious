@@ -47,8 +47,11 @@ impl MonitorQueryAlertModel {
                 name: SmolStr::new(format!("Log alert rule ({eval_freq})")),
                 unit: BillingPeriod::Month,
                 quantity: Decimal::ONE,
+                quantity_unit: SmolStr::new("months"),
                 unit_price: unit_price.price,
                 monthly_cost: unit_price.price,
+                quantity_max: None,
+                monthly_cost_max: None,
             }]),
             Err(e) => {
                 tracing::warn!("could not query log alert rule price for {eval_freq}: {e}");
@@ -64,8 +67,11 @@ impl MonitorQueryAlertModel {
                     name: SmolStr::new(format!("Log alert rule ({eval_freq})")),
                     unit: BillingPeriod::Month,
                     quantity: Decimal::ONE,
+                    quantity_unit: SmolStr::new("months"),
                     unit_price: price,
                     monthly_cost: price,
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
         }

@@ -9,8 +9,13 @@ pub struct CostComponent {
     pub name: SmolStr,
     pub unit: BillingPeriod,
     pub quantity: Decimal,
+    pub quantity_unit: SmolStr,
     pub unit_price: Money,
     pub monthly_cost: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quantity_max: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monthly_cost_max: Option<Money>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +24,8 @@ pub struct ResourceCost {
     pub resource_type: SmolStr,
     pub components: Vec<CostComponent>,
     pub monthly_total: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub monthly_total_max: Option<Money>,
 }
 
 impl ResourceCost {
@@ -28,11 +35,23 @@ impl ResourceCost {
         components: Vec<CostComponent>,
     ) -> Self {
         let monthly_total = components.iter().map(|c| c.monthly_cost).sum();
+        let has_range = components.iter().any(|c| c.monthly_cost_max.is_some());
+        let monthly_total_max = if has_range {
+            Some(
+                components
+                    .iter()
+                    .map(|c| c.monthly_cost_max.unwrap_or(c.monthly_cost))
+                    .sum(),
+            )
+        } else {
+            None
+        };
         Self {
             address,
             resource_type: resource_type.into(),
             components,
             monthly_total,
+            monthly_total_max,
         }
     }
 }
@@ -41,14 +60,28 @@ impl ResourceCost {
 pub struct Breakdown {
     pub resources: Vec<ResourceCost>,
     pub total_monthly_cost: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_monthly_cost_max: Option<Money>,
 }
 
 impl Breakdown {
     pub fn new(resources: Vec<ResourceCost>) -> Self {
         let total_monthly_cost = resources.iter().map(|r| r.monthly_total).sum();
+        let has_range = resources.iter().any(|r| r.monthly_total_max.is_some());
+        let total_monthly_cost_max = if has_range {
+            Some(
+                resources
+                    .iter()
+                    .map(|r| r.monthly_total_max.unwrap_or(r.monthly_total))
+                    .sum(),
+            )
+        } else {
+            None
+        };
         Self {
             resources,
             total_monthly_cost,
+            total_monthly_cost_max,
         }
     }
 

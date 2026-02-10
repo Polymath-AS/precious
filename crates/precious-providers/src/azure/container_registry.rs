@@ -46,8 +46,11 @@ impl ContainerRegistryModel {
             name: SmolStr::new(format!("Registry unit ({sku})")),
             unit: BillingPeriod::Month,
             quantity: Decimal::ONE,
+            quantity_unit: SmolStr::new("months"),
             unit_price,
             monthly_cost: unit_price,
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

@@ -1,4 +1,6 @@
-use comfy_table::{Cell, Color, Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL};
+use comfy_table::{
+    Cell, Color, ContentArrangement, Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL,
+};
 use miette::{Result, miette};
 use precious_core::cost::{Breakdown, Change, Diff};
 use serde::Serialize;
@@ -7,7 +9,8 @@ pub fn print_breakdown_table(breakdown: &Breakdown) {
     let mut table = Table::new();
     table
         .load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS);
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_content_arrangement(ContentArrangement::Dynamic);
 
     table.set_header(vec![
         Cell::new("Resource"),
@@ -30,22 +33,40 @@ pub fn print_breakdown_table(breakdown: &Breakdown) {
                 Cell::new("")
             };
 
+            let quantity_str = match component.quantity_max {
+                Some(max) => format!(
+                    "{}–{} {}",
+                    component.quantity, max, component.quantity_unit
+                ),
+                None => format!("{} {}", component.quantity, component.quantity_unit),
+            };
+
+            let cost_str = match component.monthly_cost_max {
+                Some(max) => format!("{}–{}", component.monthly_cost, max),
+                None => component.monthly_cost.to_string(),
+            };
+
             table.add_row(vec![
                 resource_cell,
                 Cell::new(&*component.name),
-                Cell::new(format!("{} {}", component.quantity, component.unit)),
+                Cell::new(quantity_str),
                 Cell::new(component.unit_price.to_string()),
-                Cell::new(component.monthly_cost.to_string()),
+                Cell::new(cost_str),
             ]);
         }
     }
+
+    let total_str = match breakdown.total_monthly_cost_max {
+        Some(max) => format!("{}–{}", breakdown.total_monthly_cost, max),
+        None => breakdown.total_monthly_cost.to_string(),
+    };
 
     table.add_row(vec![
         Cell::new("TOTAL").fg(Color::Green),
         Cell::new(""),
         Cell::new(""),
         Cell::new(""),
-        Cell::new(breakdown.total_monthly_cost.to_string()).fg(Color::Green),
+        Cell::new(total_str).fg(Color::Green),
     ]);
 
     println!("\n{table}\n");
@@ -55,7 +76,8 @@ pub fn print_diff_table(diff: &Diff) {
     let mut table = Table::new();
     table
         .load_preset(UTF8_FULL)
-        .apply_modifier(UTF8_ROUND_CORNERS);
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_content_arrangement(ContentArrangement::Dynamic);
 
     table.set_header(vec![
         Cell::new("Change"),

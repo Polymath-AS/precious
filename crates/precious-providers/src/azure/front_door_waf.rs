@@ -43,8 +43,11 @@ impl FrontDoorWafModel {
             name: SmolStr::new("WAF policy"),
             unit: BillingPeriod::Month,
             quantity: Decimal::ONE,
+            quantity_unit: SmolStr::new("months"),
             unit_price: policy_price.price,
             monthly_cost: policy_price.price,
+            quantity_max: None,
+            monthly_cost_max: None,
         });
 
         let custom_rule_count = count_blocks(resource, "custom_rule");
@@ -63,8 +66,11 @@ impl FrontDoorWafModel {
                 name: SmolStr::new("Custom rules"),
                 unit: BillingPeriod::Month,
                 quantity: custom_rule_count,
+                quantity_unit: SmolStr::new("rules"),
                 unit_price: rule_price.price,
                 monthly_cost: Money::usd(rule_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 
@@ -84,8 +90,11 @@ impl FrontDoorWafModel {
                 name: SmolStr::new("Managed rule sets"),
                 unit: BillingPeriod::Month,
                 quantity: managed_rule_count,
+                quantity_unit: SmolStr::new("rule sets"),
                 unit_price: managed_price.price,
                 monthly_cost: Money::usd(managed_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 

@@ -89,8 +89,11 @@ impl SecurityCenterPricingModel {
                     name: SmolStr::new(format!("Defender for {resource_type} (price unavailable)")),
                     unit: BillingPeriod::Month,
                     quantity: Decimal::ONE,
+                    quantity_unit: SmolStr::new("months"),
                     unit_price: Money::zero(),
                     monthly_cost: Money::zero(),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }]);
             }
         };
@@ -111,8 +114,11 @@ impl SecurityCenterPricingModel {
                     name: SmolStr::new(format!("Defender for {resource_type}")),
                     unit: BillingPeriod::Month,
                     quantity,
+                    quantity_unit: SmolStr::new("months"),
                     unit_price: unit_price.price,
                     monthly_cost: Money::usd(monthly_cost),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
             Err(e) => {
@@ -121,8 +127,11 @@ impl SecurityCenterPricingModel {
                     name: SmolStr::new(format!("Defender for {resource_type} (price unavailable)")),
                     unit: BillingPeriod::Month,
                     quantity,
+                    quantity_unit: SmolStr::new("months"),
                     unit_price: Money::zero(),
                     monthly_cost: Money::zero(),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
         }

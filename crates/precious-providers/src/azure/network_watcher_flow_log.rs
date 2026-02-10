@@ -37,8 +37,11 @@ impl NetworkWatcherFlowLogModel {
                 name: SmolStr::new("Flow log collection (usage-based)"),
                 unit: BillingPeriod::GBMonth,
                 quantity: Decimal::ZERO,
+                quantity_unit: SmolStr::new("GB/month"),
                 unit_price: Money::zero(),
                 monthly_cost: Money::zero(),
+                quantity_max: None,
+                monthly_cost_max: None,
             }];
 
             if is_traffic_analytics_enabled(resource) {
@@ -46,8 +49,11 @@ impl NetworkWatcherFlowLogModel {
                     name: SmolStr::new("Traffic Analytics (usage-based)"),
                     unit: BillingPeriod::GBMonth,
                     quantity: Decimal::ZERO,
+                    quantity_unit: SmolStr::new("GB/month"),
                     unit_price: Money::zero(),
                     monthly_cost: Money::zero(),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 });
             }
 
@@ -69,8 +75,11 @@ impl NetworkWatcherFlowLogModel {
             name: SmolStr::new("Flow log collection"),
             unit: BillingPeriod::GBMonth,
             quantity: gb,
+            quantity_unit: SmolStr::new("GB/month"),
             unit_price: collection_price.price,
             monthly_cost: Money::usd(collection_cost),
+            quantity_max: None,
+            monthly_cost_max: None,
         }];
 
         if is_traffic_analytics_enabled(resource) {
@@ -89,8 +98,11 @@ impl NetworkWatcherFlowLogModel {
                 name: SmolStr::new("Traffic Analytics"),
                 unit: BillingPeriod::GBMonth,
                 quantity: gb,
+                quantity_unit: SmolStr::new("GB/month"),
                 unit_price: ta_price.price,
                 monthly_cost: Money::usd(ta_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 

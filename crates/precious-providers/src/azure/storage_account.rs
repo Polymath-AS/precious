@@ -45,8 +45,11 @@ impl StorageAccountModel {
             )),
             unit: BillingPeriod::GBMonth,
             quantity: Decimal::ZERO,
+            quantity_unit: SmolStr::new("GB/month"),
             unit_price: Money::usd(unit_price_amount),
             monthly_cost: Money::zero(),
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

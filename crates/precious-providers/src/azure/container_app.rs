@@ -58,10 +58,17 @@ impl ContainerAppModel {
             })?;
         let memory_gib = parse_memory_gib(memory_str)?;
 
-        let replicas = resource
+        let min_replicas = resource
             .get_nested_f64(&["template", "min_replicas"])
             .map(|v| Decimal::try_from(v).unwrap_or(Decimal::ONE))
             .unwrap_or(Decimal::ONE);
+
+        let max_replicas = resource
+            .get_nested_f64(&["template", "max_replicas"])
+            .and_then(|v| Decimal::try_from(v).ok());
+
+        let has_range = max_replicas
+            .is_some_and(|max| max > min_replicas);
 
         let vcpu_rate: Decimal = VCPU_MONTHLY_RATE
             .parse()
@@ -70,23 +77,43 @@ impl ContainerAppModel {
             .parse()
             .expect("constant MEMORY_GIB_MONTHLY_RATE must be valid Decimal");
 
-        let vcpu_monthly = vcpu_rate * cpu * replicas;
-        let mem_monthly = mem_rate * memory_gib * replicas;
+        let vcpu_qty_min = cpu * min_replicas;
+        let mem_qty_min = memory_gib * min_replicas;
+        let vcpu_monthly_min = vcpu_rate * vcpu_qty_min;
+        let mem_monthly_min = mem_rate * mem_qty_min;
+
+        let (vcpu_qty_max, vcpu_monthly_max, mem_qty_max, mem_monthly_max) = if has_range {
+            let max = max_replicas.expect("checked by has_range");
+            (
+                Some(cpu * max),
+                Some(Money::usd(vcpu_rate * cpu * max)),
+                Some(memory_gib * max),
+                Some(Money::usd(mem_rate * memory_gib * max)),
+            )
+        } else {
+            (None, None, None, None)
+        };
 
         Ok(vec![
             CostComponent {
                 name: SmolStr::new("vCPU"),
                 unit: BillingPeriod::Month,
-                quantity: cpu * replicas,
+                quantity: vcpu_qty_min,
+                quantity_unit: SmolStr::new("vCPUs"),
                 unit_price: Money::usd(vcpu_rate),
-                monthly_cost: Money::usd(vcpu_monthly),
+                monthly_cost: Money::usd(vcpu_monthly_min),
+                quantity_max: vcpu_qty_max,
+                monthly_cost_max: vcpu_monthly_max,
             },
             CostComponent {
                 name: SmolStr::new("Memory"),
                 unit: BillingPeriod::Month,
-                quantity: memory_gib * replicas,
+                quantity: mem_qty_min,
+                quantity_unit: SmolStr::new("GiB"),
                 unit_price: Money::usd(mem_rate),
-                monthly_cost: Money::usd(mem_monthly),
+                monthly_cost: Money::usd(mem_monthly_min),
+                quantity_max: mem_qty_max,
+                monthly_cost_max: mem_monthly_max,
             },
         ])
     }

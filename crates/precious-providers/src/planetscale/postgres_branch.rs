@@ -49,8 +49,11 @@ impl PostgresBranchModel {
             name: SmolStr::new(format!("Cluster ({cluster_size}, {HA_NODE_COUNT}-node HA)")),
             unit: BillingPeriod::Month,
             quantity: Decimal::ONE,
+            quantity_unit: SmolStr::new("months"),
             unit_price: unit_price.price,
             monthly_cost: unit_price.price,
+            quantity_max: None,
+            monthly_cost_max: None,
         }];
 
         let extra_storage_gb = usage
@@ -83,8 +86,11 @@ impl PostgresBranchModel {
                 name: SmolStr::new("Storage (overage)"),
                 unit: BillingPeriod::GBMonth,
                 quantity: overage_gb,
+                quantity_unit: SmolStr::new("GB/month"),
                 unit_price: storage_price.price,
                 monthly_cost: Money::usd(storage_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 

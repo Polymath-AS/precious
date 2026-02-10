@@ -30,8 +30,11 @@ impl CognitiveDeploymentModel {
                 name: SmolStr::new(format!("Deployment ({sku_name}, usage-based)")),
                 unit: BillingPeriod::Month,
                 quantity: Decimal::ZERO,
+                quantity_unit: SmolStr::new("months"),
                 unit_price: Money::zero(),
                 monthly_cost: Money::zero(),
+                quantity_max: None,
+                monthly_cost_max: None,
             }]);
         }
 
@@ -60,8 +63,11 @@ impl CognitiveDeploymentModel {
                     )),
                     unit: BillingPeriod::Hour,
                     quantity: capacity_dec * monthly_hours,
+                    quantity_unit: SmolStr::new("hours"),
                     unit_price: unit_price.price,
                     monthly_cost: Money::usd(monthly_cost),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
             Err(e) => {
@@ -72,8 +78,11 @@ impl CognitiveDeploymentModel {
                     )),
                     unit: BillingPeriod::Month,
                     quantity: capacity_dec,
+                    quantity_unit: SmolStr::new("PTUs"),
                     unit_price: Money::zero(),
                     monthly_cost: Money::zero(),
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
         }

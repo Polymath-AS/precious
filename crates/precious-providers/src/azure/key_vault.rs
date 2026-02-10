@@ -26,8 +26,11 @@ impl KeyVaultModel {
             name: SmolStr::new("Operations (pay-per-use)"),
             unit: BillingPeriod::Request,
             quantity: Decimal::ZERO,
+            quantity_unit: SmolStr::new("requests"),
             unit_price: Money::usd(per_10k_ops_price),
             monthly_cost: Money::zero(),
+            quantity_max: None,
+            monthly_cost_max: None,
         }])
     }
 }

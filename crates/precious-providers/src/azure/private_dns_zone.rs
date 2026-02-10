@@ -34,8 +34,11 @@ impl PrivateDnsZoneModel {
             name: SmolStr::new("Hosted zone"),
             unit: BillingPeriod::Month,
             quantity: Decimal::ONE,
+            quantity_unit: SmolStr::new("months"),
             unit_price: unit_price.price,
             monthly_cost: unit_price.price,
+            quantity_max: None,
+            monthly_cost_max: None,
         }];
 
         if let Some(queries_millions) = usage.and_then(|u| u.get_metric("dns_queries_millions")) {
@@ -54,8 +57,11 @@ impl PrivateDnsZoneModel {
                 name: SmolStr::new("DNS queries (per million)"),
                 unit: BillingPeriod::Month,
                 quantity: queries_millions,
+                quantity_unit: SmolStr::new("millions"),
                 unit_price: dns_price.price,
                 monthly_cost: Money::usd(dns_cost),
+                quantity_max: None,
+                monthly_cost_max: None,
             });
         }
 

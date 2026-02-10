@@ -42,8 +42,11 @@ impl MonitorMetricAlertModel {
                 name: SmolStr::new(label),
                 unit: BillingPeriod::Month,
                 quantity: Decimal::ONE,
+                quantity_unit: SmolStr::new("months"),
                 unit_price: unit_price.price,
                 monthly_cost: unit_price.price,
+                quantity_max: None,
+                monthly_cost_max: None,
             }]),
             Err(e) => {
                 tracing::warn!("could not query metric alert price ({meter_name}): {e}");
@@ -57,8 +60,11 @@ impl MonitorMetricAlertModel {
                     name: SmolStr::new(label),
                     unit: BillingPeriod::Month,
                     quantity: Decimal::ONE,
+                    quantity_unit: SmolStr::new("months"),
                     unit_price: price,
                     monthly_cost: price,
+                    quantity_max: None,
+                    monthly_cost_max: None,
                 }])
             }
         }
