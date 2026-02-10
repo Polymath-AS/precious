@@ -1,0 +1,21 @@
+[package]
+name = "precious-tf"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Terraform HCL parser for precious cloud cost estimator"
+
+[dependencies]
+precious-core = { workspace = true }
+hcl-rs = { git = "https://github.com/martinohmann/hcl-rs" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+indexmap = { workspace = true }
+smol_str = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
