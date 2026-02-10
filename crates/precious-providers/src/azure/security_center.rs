@@ -44,7 +44,7 @@ impl SecurityCenterPricingModel {
             "StorageAccounts" => (
                 "Microsoft Defender for Cloud",
                 "Microsoft Defender for Storage",
-                "Standard Overage Transactions",
+                "Standard Node",
             ),
             "AppServices" => (
                 "Microsoft Defender for Cloud",
@@ -59,7 +59,7 @@ impl SecurityCenterPricingModel {
             "KeyVaults" => (
                 "Microsoft Defender for Cloud",
                 "Microsoft Defender for Key Vault",
-                "Standard Transactions",
+                "Per node Std Node",
             ),
             "Arm" => (
                 "Microsoft Defender for Cloud",
@@ -75,6 +75,11 @@ impl SecurityCenterPricingModel {
                 "Microsoft Defender for Cloud",
                 "Microsoft Defender for Containers",
                 "Standard vCore vCore Pack",
+            ),
+            "OpenSourceRelationalDatabases" => (
+                "Microsoft Defender for Cloud",
+                "Microsoft Defender for PostgreSQL",
+                "Standard Node",
             ),
             _ => {
                 tracing::warn!(
