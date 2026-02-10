@@ -16,13 +16,13 @@ cargo install precious-cli
 
 ```bash
 # Run directly without installing
-nix run github:Polymath-AS/Show-us-the-precious
+nix run github:Polymath-AS/precious
 
 # Install into your profile
-nix profile install github:Polymath-AS/Show-us-the-precious
+nix profile install github:Polymath-AS/precious
 
 # Enter a development shell
-nix develop github:Polymath-AS/Show-us-the-precious
+nix develop github:Polymath-AS/precious
 ```
 
 ## Quick Start
