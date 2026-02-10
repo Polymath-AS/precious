@@ -36,6 +36,10 @@ enum Commands {
         #[arg(long)]
         reverse: bool,
 
+        /// Max directory depth for auto-detecting root modules
+        #[arg(long, default_value = "10")]
+        max_search_depth: usize,
+
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
@@ -49,6 +53,10 @@ enum Commands {
         /// Path to baseline JSON file for comparison
         #[arg(long)]
         compare_to: String,
+
+        /// Max directory depth for auto-detecting root modules
+        #[arg(long, default_value = "10")]
+        max_search_depth: usize,
 
         /// Output format
         #[arg(short, long, default_value = "table")]
@@ -81,12 +89,20 @@ fn main() -> Result<()> {
             path,
             usage_file,
             reverse,
+            max_search_depth,
             format,
-        } => rt.block_on(commands::breakdown(&path, usage_file.as_deref(), reverse, &format)),
+        } => rt.block_on(commands::breakdown(
+            &path,
+            usage_file.as_deref(),
+            reverse,
+            max_search_depth,
+            &format,
+        )),
         Commands::Diff {
             path,
             compare_to,
+            max_search_depth,
             format,
-        } => rt.block_on(commands::diff(&path, &compare_to, &format)),
+        } => rt.block_on(commands::diff(&path, &compare_to, max_search_depth, &format)),
     }
 }

@@ -3,6 +3,7 @@ use crate::resource::ResourceAddress;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CostComponent {
@@ -151,6 +152,85 @@ impl Diff {
             total_before: before.total_monthly_cost,
             total_after: after.total_monthly_cost,
             delta: after.total_monthly_cost - before.total_monthly_cost,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectBreakdown {
+    pub path: PathBuf,
+    pub breakdown: Breakdown,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiBreakdown {
+    pub projects: Vec<ProjectBreakdown>,
+    pub total_monthly_cost: Money,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_monthly_cost_max: Option<Money>,
+}
+
+impl MultiBreakdown {
+    pub fn new(projects: Vec<ProjectBreakdown>) -> Self {
+        let total_monthly_cost = projects
+            .iter()
+            .map(|p| p.breakdown.total_monthly_cost)
+            .sum();
+        let has_range = projects
+            .iter()
+            .any(|p| p.breakdown.total_monthly_cost_max.is_some());
+        let total_monthly_cost_max = if has_range {
+            Some(
+                projects
+                    .iter()
+                    .map(|p| {
+                        p.breakdown
+                            .total_monthly_cost_max
+                            .unwrap_or(p.breakdown.total_monthly_cost)
+                    })
+                    .sum(),
+            )
+        } else {
+            None
+        };
+        Self {
+            projects,
+            total_monthly_cost,
+            total_monthly_cost_max,
+        }
+    }
+
+    pub fn sort(&mut self, reverse: bool) {
+        for project in &mut self.projects {
+            project.breakdown.sort(reverse);
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectDiff {
+    pub path: PathBuf,
+    pub diff: Diff,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiDiff {
+    pub projects: Vec<ProjectDiff>,
+    pub total_before: Money,
+    pub total_after: Money,
+    pub delta: Money,
+}
+
+impl MultiDiff {
+    pub fn new(projects: Vec<ProjectDiff>) -> Self {
+        let total_before = projects.iter().map(|p| p.diff.total_before).sum();
+        let total_after = projects.iter().map(|p| p.diff.total_after).sum();
+        let delta = total_after - total_before;
+        Self {
+            projects,
+            total_before,
+            total_after,
+            delta,
         }
     }
 }

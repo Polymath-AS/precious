@@ -2,7 +2,7 @@ use comfy_table::{
     Cell, Color, ContentArrangement, Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL,
 };
 use miette::{Result, miette};
-use precious_core::cost::{Breakdown, Change, Diff};
+use precious_core::cost::{Breakdown, Change, Diff, MultiBreakdown, MultiDiff};
 use serde::Serialize;
 
 pub fn print_breakdown_table(breakdown: &Breakdown) {
@@ -130,6 +130,35 @@ pub fn print_diff_table(diff: &Diff) {
         "\nTotal before: {}  |  Total after: {}  |  Delta: {}\n",
         diff.total_before, diff.total_after, diff.delta
     );
+}
+
+pub fn print_multi_breakdown_table(multi: &MultiBreakdown) {
+    for project in &multi.projects {
+        println!("\nProject: {}", project.path.display());
+        print_breakdown_table(&project.breakdown);
+    }
+
+    if multi.projects.len() > 1 {
+        let total_str = match multi.total_monthly_cost_max {
+            Some(max) => format!("{}–{}", multi.total_monthly_cost, max),
+            None => multi.total_monthly_cost.to_string(),
+        };
+        println!("GRAND TOTAL: {total_str}\n");
+    }
+}
+
+pub fn print_multi_diff_table(multi: &MultiDiff) {
+    for project in &multi.projects {
+        println!("\nProject: {}", project.path.display());
+        print_diff_table(&project.diff);
+    }
+
+    if multi.projects.len() > 1 {
+        println!(
+            "GRAND TOTAL — Before: {}  |  After: {}  |  Delta: {}\n",
+            multi.total_before, multi.total_after, multi.delta
+        );
+    }
 }
 
 pub fn print_json<T: Serialize>(data: &T) -> Result<()> {

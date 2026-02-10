@@ -164,3 +164,171 @@ fn resolve_variables(attrs: &mut IndexMap<String, TfValue>, variables: &IndexMap
 fn is_local_source(source: &str) -> bool {
     source.starts_with("./") || source.starts_with("../")
 }
+
+/// Check whether a directory directly contains any `.tf` files (non-recursive).
+pub fn dir_has_tf_files(dir: &Path) -> bool {
+    std::fs::read_dir(dir)
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .any(|e| e.path().extension().is_some_and(|ext| ext == "tf"))
+        })
+        .unwrap_or(false)
+}
+
+/// Discover root Terraform modules under `base`.
+///
+/// Walks directories up to `max_depth`, finds all dirs containing `.tf` files,
+/// parses module blocks to identify child modules, and returns only root modules
+/// (those not referenced as a local module source by any other module).
+pub fn discover_root_modules(
+    base: &Path,
+    max_depth: usize,
+) -> Result<Vec<PathBuf>, PreciousError> {
+    let base = base.canonicalize().map_err(PreciousError::Io)?;
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    let mut child_modules: HashSet<PathBuf> = HashSet::new();
+
+    collect_tf_dirs(&base, 0, max_depth, &mut candidates)?;
+
+    for dir in &candidates {
+        let tf_files: Vec<PathBuf> = std::fs::read_dir(dir)
+            .map_err(PreciousError::Io)?
+            .filter_map(Result::ok)
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "tf"))
+            .map(|e| e.path())
+            .collect();
+
+        for path in &tf_files {
+            let result = match crate::parser::parse_hcl_file(path) {
+                Ok(r) => r,
+                Err(e) => {
+                    warn!("failed to parse {} during discovery: {e}", path.display());
+                    continue;
+                }
+            };
+
+            for module in &result.modules {
+                if !is_local_source(&module.source) {
+                    continue;
+                }
+                let module_dir = dir.join(&module.source);
+                if let Ok(resolved) = module_dir.canonicalize() {
+                    child_modules.insert(resolved);
+                }
+            }
+        }
+    }
+
+    let mut roots: Vec<PathBuf> = candidates
+        .into_iter()
+        .filter(|dir| !child_modules.contains(dir))
+        .collect();
+    roots.sort();
+    Ok(roots)
+}
+
+fn collect_tf_dirs(
+    dir: &Path,
+    depth: usize,
+    max_depth: usize,
+    candidates: &mut Vec<PathBuf>,
+) -> Result<(), PreciousError> {
+    if depth > max_depth {
+        return Ok(());
+    }
+
+    if dir_has_tf_files(dir) {
+        candidates.push(dir.to_path_buf());
+    }
+
+    let entries = std::fs::read_dir(dir).map_err(PreciousError::Io)?;
+    for entry in entries.filter_map(Result::ok) {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with('.') {
+            continue;
+        }
+        collect_tf_dirs(&path, depth + 1, max_depth, candidates)?;
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fixture(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name)
+    }
+
+    #[test]
+    fn flat_repo_single_root() {
+        let dir = fixture("flat_repo");
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert_eq!(roots.len(), 1);
+        assert_eq!(roots[0], dir.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn multi_root_no_cross_refs() {
+        let dir = fixture("multi_root");
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert_eq!(roots.len(), 2);
+        let names: Vec<String> = roots
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert!(names.contains(&"infra".to_string()));
+        assert!(names.contains(&"legacy".to_string()));
+    }
+
+    #[test]
+    fn root_with_child_module_excluded() {
+        let dir = fixture("with_child_module");
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert_eq!(roots.len(), 1);
+        assert_eq!(roots[0], dir.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn hidden_dirs_skipped() {
+        let dir = fixture("hidden_dir");
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert_eq!(roots.len(), 1);
+        assert_eq!(roots[0], dir.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn max_depth_respected() {
+        let dir = fixture("deep_nested");
+        let roots = discover_root_modules(&dir, 1).unwrap();
+        assert!(roots.is_empty());
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert_eq!(roots.len(), 1);
+    }
+
+    #[test]
+    fn empty_dir_no_roots() {
+        let dir = fixture("empty_dir");
+        let roots = discover_root_modules(&dir, 10).unwrap();
+        assert!(roots.is_empty());
+    }
+
+    #[test]
+    fn dir_has_tf_files_true() {
+        assert!(dir_has_tf_files(&fixture("flat_repo")));
+    }
+
+    #[test]
+    fn dir_has_tf_files_false() {
+        assert!(!dir_has_tf_files(&fixture("no_tf")));
+    }
+}
