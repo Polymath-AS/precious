@@ -19,7 +19,7 @@ fn build_engine() -> Engine {
     Engine::new(providers).with_unsupported_behavior(UnsupportedBehavior::Warn)
 }
 
-pub async fn breakdown(path: &str, usage_file: Option<&str>, format: &OutputFormat) -> Result<()> {
+pub async fn breakdown(path: &str, usage_file: Option<&str>, reverse: bool, format: &OutputFormat) -> Result<()> {
     let state = precious_tf::loader::load_directory(Path::new(path)).map_err(|e| miette!("{e}"))?;
 
     let usage = match usage_file {
@@ -29,10 +29,12 @@ pub async fn breakdown(path: &str, usage_file: Option<&str>, format: &OutputForm
 
     let engine = build_engine();
 
-    let breakdown = engine
+    let mut breakdown = engine
         .estimate(&state, usage.as_ref())
         .await
         .map_err(|e| miette!("{e}"))?;
+
+    breakdown.sort(reverse);
 
     match format {
         OutputFormat::Table => output::print_breakdown_table(&breakdown),

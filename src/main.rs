@@ -32,6 +32,10 @@ enum Commands {
         #[arg(long)]
         usage_file: Option<String>,
 
+        /// Sort most expensive last (default); use --reverse for most expensive first
+        #[arg(long)]
+        reverse: bool,
+
         /// Output format
         #[arg(short, long, default_value = "table")]
         format: OutputFormat,
@@ -76,8 +80,9 @@ fn main() -> Result<()> {
         Commands::Breakdown {
             path,
             usage_file,
+            reverse,
             format,
-        } => rt.block_on(commands::breakdown(&path, usage_file.as_deref(), &format)),
+        } => rt.block_on(commands::breakdown(&path, usage_file.as_deref(), reverse, &format)),
         Commands::Diff {
             path,
             compare_to,

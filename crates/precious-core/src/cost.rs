@@ -51,6 +51,14 @@ impl Breakdown {
             total_monthly_cost,
         }
     }
+
+    pub fn sort(&mut self, reverse: bool) {
+        self.resources
+            .sort_by(|a, b| a.monthly_total.amount.cmp(&b.monthly_total.amount));
+        if reverse {
+            self.resources.reverse();
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
