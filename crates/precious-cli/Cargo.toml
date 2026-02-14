@@ -1,0 +1,27 @@
+[package]
+name = "precious-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CLI for precious - cloud infrastructure cost estimator"
+
+[[bin]]
+name = "precious"
+path = "src/main.rs"
+
+[dependencies]
+precious-core = { workspace = true }
+precious-tf = { workspace = true }
+precious-pricing = { workspace = true }
+precious-providers = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+comfy-table = { workspace = true }
+miette = { workspace = true }
+rust_decimal = { workspace = true }
+serde = { workspace = true }

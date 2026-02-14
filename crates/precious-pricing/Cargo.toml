@@ -9,15 +9,15 @@ description = "Cloud pricing API client for precious cost estimator"
 
 [dependencies]
 precious-core = { workspace = true }
-reqwest = { git = "https://github.com/seanmonstar/reqwest", features = ["json", "rustls"], default-features = false }
+reqwest = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 rust_decimal = { workspace = true }
 tracing = { workspace = true }
-directories = { git = "https://github.com/dirs-dev/directories-rs" }
-time = { git = "https://github.com/time-rs/time", features = ["serde"] }
+directories = { workspace = true }
+time = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }

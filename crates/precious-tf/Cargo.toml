@@ -9,7 +9,7 @@ description = "Terraform HCL parser for precious cloud cost estimator"
 
 [dependencies]
 precious-core = { workspace = true }
-hcl-rs = { git = "https://github.com/martinohmann/hcl-rs" }
+hcl-rs = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

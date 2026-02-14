@@ -1,33 +1,6 @@
-[package]
-name = "precious-cli"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-rust-version.workspace = true
-description = "CLI for precious - cloud infrastructure cost estimator"
-
-[[bin]]
-name = "precious"
-path = "src/main.rs"
-
-[dependencies]
-precious-core = { workspace = true }
-precious-tf = { workspace = true }
-precious-pricing = { workspace = true }
-precious-providers = { workspace = true }
-clap = { git = "https://github.com/clap-rs/clap", features = ["derive"] }
-tokio = { workspace = true }
-serde_json = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { git = "https://github.com/tokio-rs/tracing", features = ["env-filter"] }
-comfy-table = { git = "https://github.com/Nukesor/comfy-table" }
-miette = { git = "https://github.com/zkat/miette", features = ["fancy"] }
-rust_decimal = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-
 [workspace]
 members = [
+    "crates/precious-cli",
     "crates/precious-core",
     "crates/precious-tf",
     "crates/precious-pricing",
@@ -49,62 +22,44 @@ precious-pricing = { path = "crates/precious-pricing" }
 precious-providers = { path = "crates/precious-providers" }
 
 # Serialization
-serde = { git = "https://github.com/serde-rs/serde", features = ["derive"] }
-serde_json = { git = "https://github.com/serde-rs/json" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
 
 # Error handling
-thiserror = { git = "https://github.com/dtolnay/thiserror" }
+thiserror = "2"
 
 # Currency / decimal
-rust_decimal = { git = "https://github.com/paupino/rust-decimal", features = ["serde-with-str"] }
+rust_decimal = { version = "1", features = ["serde-with-str"] }
 
 # Async
-tokio = { git = "https://github.com/tokio-rs/tokio", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+
+# HTTP
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 # Logging
-tracing = { git = "https://github.com/tokio-rs/tracing" }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-indexmap = { git = "https://github.com/indexmap-rs/indexmap", features = ["serde"] }
-smol_str = { git = "https://github.com/rust-analyzer/smol_str", features = ["serde"] }
+# Collections
+indexmap = { version = "2", features = ["serde"] }
+smol_str = { version = "0.3", features = ["serde"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+comfy-table = "7"
+miette = { version = "7", features = ["fancy"] }
+
+# Terraform
+hcl-rs = "0.18"
+
+# Filesystem
+directories = "6"
+time = { version = "0.3", features = ["serde"] }
 
 # Testing
-insta = { git = "https://github.com/mitsuhiko/insta", features = ["yaml"] }
-
-# Patch crates.io deps to use GitHub sources globally (including transitive deps)
-# This ensures all crates in the tree use the same serde version from git.
-[patch.crates-io]
-serde = { git = "https://github.com/serde-rs/serde" }
-serde_core = { git = "https://github.com/serde-rs/serde" }
-serde_derive = { git = "https://github.com/serde-rs/serde" }
-serde_json = { git = "https://github.com/serde-rs/json" }
-thiserror = { git = "https://github.com/dtolnay/thiserror" }
-tokio = { git = "https://github.com/tokio-rs/tokio" }
-tokio-macros = { git = "https://github.com/tokio-rs/tokio" }
-tracing = { git = "https://github.com/tokio-rs/tracing" }
-tracing-core = { git = "https://github.com/tokio-rs/tracing" }
-tracing-subscriber = { git = "https://github.com/tokio-rs/tracing" }
-tracing-attributes = { git = "https://github.com/tokio-rs/tracing" }
-tracing-log = { git = "https://github.com/tokio-rs/tracing" }
-indexmap = { git = "https://github.com/indexmap-rs/indexmap" }
-clap = { git = "https://github.com/clap-rs/clap" }
-clap_builder = { git = "https://github.com/clap-rs/clap" }
-clap_derive = { git = "https://github.com/clap-rs/clap" }
-clap_lex = { git = "https://github.com/clap-rs/clap" }
-reqwest = { git = "https://github.com/seanmonstar/reqwest" }
-time = { git = "https://github.com/time-rs/time" }
-time-core = { git = "https://github.com/time-rs/time" }
-time-macros = { git = "https://github.com/time-rs/time" }
-rust_decimal = { git = "https://github.com/paupino/rust-decimal" }
-smol_str = { git = "https://github.com/rust-analyzer/smol_str" }
-hcl-rs = { git = "https://github.com/martinohmann/hcl-rs" }
-hcl-edit = { git = "https://github.com/martinohmann/hcl-rs" }
-hcl-primitives = { git = "https://github.com/martinohmann/hcl-rs" }
-comfy-table = { git = "https://github.com/Nukesor/comfy-table" }
-miette = { git = "https://github.com/zkat/miette" }
-miette-derive = { git = "https://github.com/zkat/miette" }
-directories = { git = "https://github.com/dirs-dev/directories-rs" }
-insta = { git = "https://github.com/mitsuhiko/insta" }
-serde_yaml = { git = "https://github.com/dtolnay/serde-yaml" }
+insta = { version = "1", features = ["yaml"] }
 
 [profile.release]
 lto = true

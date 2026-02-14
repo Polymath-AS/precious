@@ -12,7 +12,7 @@ precious-core = { workspace = true }
 precious-pricing = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = { git = "https://github.com/dtolnay/serde-yaml" }
+serde_yaml = { workspace = true }
 thiserror = { workspace = true }
 rust_decimal = { workspace = true }
 indexmap = { workspace = true }
