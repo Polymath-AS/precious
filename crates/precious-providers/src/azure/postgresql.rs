@@ -14,10 +14,17 @@ use std::pin::Pin;
 
 pub struct PostgresqlFlexibleServerModel;
 
+enum Tier {
+    Burstable,
+    GeneralPurpose,
+    MemoryOptimized,
+}
+
 struct SkuInfo {
-    tier: &'static str,
+    tier: Tier,
     series: String,
     vcores: u32,
+    vm_size: String,
 }
 
 fn parse_sku_name(sku_name: &str) -> Result<SkuInfo, PreciousError> {
@@ -29,9 +36,9 @@ fn parse_sku_name(sku_name: &str) -> Result<SkuInfo, PreciousError> {
     }
 
     let tier = match parts[0] {
-        "GP" => "General Purpose",
-        "MO" => "Memory Optimized",
-        "B" => "Burstable",
+        "GP" => Tier::GeneralPurpose,
+        "MO" => Tier::MemoryOptimized,
+        "B" => Tier::Burstable,
         other => {
             return Err(PreciousError::PricingError(format!(
                 "unknown sku tier prefix: {other}"
@@ -65,11 +72,45 @@ fn parse_sku_name(sku_name: &str) -> Result<SkuInfo, PreciousError> {
 
     let series = format!("{letter_prefix}{suffix}").replace('_', "");
 
+    let vm_size = vm_part.replace('_', "");
+
     Ok(SkuInfo {
         tier,
         series,
         vcores,
+        vm_size,
     })
+}
+
+fn compute_product_name(sku: &SkuInfo) -> String {
+    match sku.tier {
+        Tier::Burstable => {
+            "Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute".to_string()
+        }
+        Tier::GeneralPurpose => {
+            format!(
+                "Azure Database for PostgreSQL Flexible Server General Purpose {} Series Compute",
+                sku.series
+            )
+        }
+        Tier::MemoryOptimized => {
+            if sku.series == "Esv3" {
+                "Az DB for PGSQL Flexible Server Memory Optimized Esv3 Series Compute".to_string()
+            } else {
+                format!(
+                    "Azure Database for PostgreSQL Flexible Server Memory Optimized {} Series Compute",
+                    sku.series
+                )
+            }
+        }
+    }
+}
+
+fn compute_sku_filter(sku: &SkuInfo) -> String {
+    match sku.tier {
+        Tier::Burstable => sku.vm_size.clone(),
+        Tier::GeneralPurpose | Tier::MemoryOptimized => format!("{} vCore", sku.vcores),
+    }
 }
 
 impl PostgresqlFlexibleServerModel {
@@ -97,15 +138,12 @@ impl PostgresqlFlexibleServerModel {
 
         let sku = parse_sku_name(sku_name)?;
 
+        let product_name = compute_product_name(&sku);
+        let sku_filter = compute_sku_filter(&sku);
+
         let compute_query = PriceQuery::azure("Azure Database for PostgreSQL", region)
-            .filter(
-                "productName",
-                &format!(
-                    "Azure Database for PostgreSQL Flexible Server {} - {} Series Compute",
-                    sku.tier, sku.series
-                ),
-            )
-            .filter("skuName", &format!("{} vCore", sku.vcores))
+            .filter("productName", &product_name)
+            .filter("skuName", &sku_filter)
             .filter("priceType", "Consumption");
 
         let compute_unit_price = pricing.query_price(&compute_query).await.map_err(|e| {
@@ -114,7 +152,13 @@ impl PostgresqlFlexibleServerModel {
 
         let hourly_rate = compute_unit_price.price.amount;
         let monthly_hours = BillingPeriod::hours_per_month();
-        let compute_monthly_cost = hourly_rate * monthly_hours;
+
+        let compute_monthly_cost = match sku.tier {
+            Tier::Burstable => hourly_rate * monthly_hours,
+            Tier::GeneralPurpose | Tier::MemoryOptimized => {
+                hourly_rate * Decimal::from(sku.vcores) * monthly_hours
+            }
+        };
 
         let storage_mb = resource.get_number("storage_mb").unwrap_or(32768.0);
         let storage_gb = Decimal::from_f64_retain(storage_mb / 1024.0).unwrap_or(Decimal::from(32));
