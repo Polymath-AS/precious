@@ -108,7 +108,8 @@ fn compute_product_name(sku: &SkuInfo) -> String {
 
 fn compute_sku_filter(sku: &SkuInfo) -> String {
     match sku.tier {
-        Tier::Burstable => sku.vm_size.clone(),
+        // Azure API uses uppercase for burstable SKUs (e.g. "B2S", "B1MS")
+        Tier::Burstable => sku.vm_size.to_uppercase(),
         Tier::GeneralPurpose | Tier::MemoryOptimized => format!("{} vCore", sku.vcores),
     }
 }
@@ -141,10 +142,10 @@ impl PostgresqlFlexibleServerModel {
         let product_name = compute_product_name(&sku);
         let sku_filter = compute_sku_filter(&sku);
 
+        // PostgreSQL pricing has priceType=null; omit the filter
         let compute_query = PriceQuery::azure("Azure Database for PostgreSQL", region)
             .filter("productName", &product_name)
-            .filter("skuName", &sku_filter)
-            .filter("priceType", "Consumption");
+            .filter("skuName", &sku_filter);
 
         let compute_unit_price = pricing.query_price(&compute_query).await.map_err(|e| {
             PreciousError::PricingError(format!("failed to get compute price for {sku_name}: {e}"))
@@ -168,8 +169,7 @@ impl PostgresqlFlexibleServerModel {
                 "productName",
                 "Az DB for PostgreSQL Flexible Server Storage",
             )
-            .filter("meterName", "Storage Data Stored")
-            .filter("priceType", "Consumption");
+            .filter("meterName", "Storage Data Stored");
 
         let storage_unit_price = pricing.query_price(&storage_query).await.map_err(|e| {
             PreciousError::PricingError(format!("failed to get storage price for {sku_name}: {e}"))
