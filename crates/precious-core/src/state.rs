@@ -97,4 +97,37 @@ impl State {
         let key = resource.address.to_string();
         self.resources.insert(key, resource);
     }
+
+    /// Find the first resource of `type_name` sharing the same module prefix as `address`.
+    ///
+    /// For `module.apps.azurerm_container_app.backend`, this searches for
+    /// `module.apps.azurerm_container_app_environment.*` first, then broadens
+    /// to any `azurerm_container_app_environment.*` in the state.
+    pub fn find_sibling_by_type(
+        &self,
+        address: &str,
+        type_name: &str,
+    ) -> Option<&TfResource> {
+        let module_prefix = address
+            .rfind('.')
+            .and_then(|last_dot| address[..last_dot].rfind('.'))
+            .map(|pos| &address[..pos]);
+
+        // First: look for a sibling in the same module
+        if let Some(prefix) = module_prefix {
+            let target_prefix = format!("{prefix}.{type_name}.");
+            if let Some(resource) = self
+                .resources
+                .values()
+                .find(|r| r.address.to_string().starts_with(&target_prefix))
+            {
+                return Some(resource);
+            }
+        }
+
+        // Fallback: any resource of that type
+        self.resources
+            .values()
+            .find(|r| r.address.kind.type_name.0.as_str() == type_name)
+    }
 }

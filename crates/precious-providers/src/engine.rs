@@ -85,7 +85,7 @@ impl Engine {
             })?;
 
             let usage_entry = usage.and_then(|u| find_usage(u, addr_str));
-            let components = model.estimate(resource, usage_entry, pricing).await?;
+            let components = model.estimate(resource, usage_entry, pricing, state).await?;
 
             let cost = ResourceCost::new(resource.address.clone(), type_name, components);
 

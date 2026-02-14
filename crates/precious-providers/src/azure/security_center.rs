@@ -4,7 +4,7 @@ use precious_core::cost::CostComponent;
 use precious_core::error::PreciousError;
 use precious_core::money::{BillingPeriod, Money};
 use precious_core::resource::{Cloud, ResourceKind};
-use precious_core::state::TfResource;
+use precious_core::state::{State, TfResource};
 use precious_pricing::client::PricingClient;
 use precious_pricing::types::PriceQuery;
 use rust_decimal::Decimal;
@@ -148,6 +148,7 @@ impl ResourceCostModel for SecurityCenterPricingModel {
         resource: &'a TfResource,
         usage: Option<&'a UsageEntry>,
         pricing: &'a dyn PricingClient,
+        _state: &'a State,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<CostComponent>, PreciousError>> + Send + 'a>> {
         Box::pin(self.do_estimate(resource, usage, pricing))
     }

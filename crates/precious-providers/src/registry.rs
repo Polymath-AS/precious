@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 use precious_core::cost::CostComponent;
 use precious_core::error::PreciousError;
 use precious_core::resource::ResourceKind;
-use precious_core::state::TfResource;
+use precious_core::state::{State, TfResource};
 use precious_pricing::client::PricingClient;
 use std::collections::HashSet;
 use std::future::Future;
@@ -17,6 +17,7 @@ pub trait ResourceCostModel: Send + Sync {
         resource: &'a TfResource,
         usage: Option<&'a UsageEntry>,
         pricing: &'a dyn PricingClient,
+        state: &'a State,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<CostComponent>, PreciousError>> + Send + 'a>>;
 }
 
