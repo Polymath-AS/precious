@@ -40,9 +40,13 @@ enum Commands {
         #[arg(long, default_value = "10")]
         max_search_depth: usize,
 
-        /// Output format
-        #[arg(short, long, default_value = "table")]
+        /// Output format (table or json)
+        #[arg(short, long, default_value = "table", conflicts_with = "json")]
         format: OutputFormat,
+
+        /// Shorthand for --format json
+        #[arg(long)]
+        json: bool,
     },
     /// Show cost diff between two states
     Diff {
@@ -58,9 +62,13 @@ enum Commands {
         #[arg(long, default_value = "10")]
         max_search_depth: usize,
 
-        /// Output format
-        #[arg(short, long, default_value = "table")]
+        /// Output format (table or json)
+        #[arg(short, long, default_value = "table", conflicts_with = "json")]
         format: OutputFormat,
+
+        /// Shorthand for --format json
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -91,18 +99,26 @@ fn main() -> Result<()> {
             reverse,
             max_search_depth,
             format,
-        } => rt.block_on(commands::breakdown(
-            &path,
-            usage_file.as_deref(),
-            reverse,
-            max_search_depth,
-            &format,
-        )),
+            json,
+        } => {
+            let fmt = if json { OutputFormat::Json } else { format };
+            rt.block_on(commands::breakdown(
+                &path,
+                usage_file.as_deref(),
+                reverse,
+                max_search_depth,
+                &fmt,
+            ))
+        }
         Commands::Diff {
             path,
             compare_to,
             max_search_depth,
             format,
-        } => rt.block_on(commands::diff(&path, &compare_to, max_search_depth, &format)),
+            json,
+        } => {
+            let fmt = if json { OutputFormat::Json } else { format };
+            rt.block_on(commands::diff(&path, &compare_to, max_search_depth, &fmt))
+        }
     }
 }
