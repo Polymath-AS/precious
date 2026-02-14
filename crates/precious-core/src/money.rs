@@ -89,10 +89,12 @@ impl Sum for Money {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BillingPeriod {
+    Second,
     Hour,
     Month,
     Year,
     GBMonth,
+    GiBSecond,
     Request,
     GBSecond,
     IOPS,
@@ -102,15 +104,22 @@ impl BillingPeriod {
     pub fn hours_per_month() -> Decimal {
         Decimal::from(730)
     }
+
+    pub fn seconds_per_month() -> Decimal {
+        // 730 hours × 3600 seconds
+        Decimal::from(2_628_000)
+    }
 }
 
 impl fmt::Display for BillingPeriod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            BillingPeriod::Second => write!(f, "seconds"),
             BillingPeriod::Hour => write!(f, "hours"),
             BillingPeriod::Month => write!(f, "months"),
             BillingPeriod::Year => write!(f, "years"),
             BillingPeriod::GBMonth => write!(f, "GB/month"),
+            BillingPeriod::GiBSecond => write!(f, "GiB-seconds"),
             BillingPeriod::Request => write!(f, "requests"),
             BillingPeriod::GBSecond => write!(f, "GB-seconds"),
             BillingPeriod::IOPS => write!(f, "IOPS"),

@@ -183,9 +183,11 @@ fn encode_uri_component(s: &str) -> String {
 fn parse_unit_of_measure(uom: &str) -> precious_core::money::BillingPeriod {
     use precious_core::money::BillingPeriod;
     match uom {
+        "1 Second" => BillingPeriod::Second,
         "1 Hour" => BillingPeriod::Hour,
         "1/Month" | "1/Day" => BillingPeriod::Month,
         "1 GB/Month" | "1 GiB/Month" => BillingPeriod::GBMonth,
+        "1 GiB Second" => BillingPeriod::GiBSecond,
         _ => BillingPeriod::Month,
     }
 }

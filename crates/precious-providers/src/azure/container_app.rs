@@ -4,15 +4,14 @@ use precious_core::cost::CostComponent;
 use precious_core::error::PreciousError;
 use precious_core::money::{BillingPeriod, Money};
 use precious_core::resource::{Cloud, ResourceKind};
-use precious_core::state::TfResource;
+use precious_core::state::{State, TfResource};
 use precious_pricing::client::PricingClient;
+use precious_pricing::types::PriceQuery;
 use rust_decimal::Decimal;
 use smol_str::SmolStr;
 use std::future::Future;
 use std::pin::Pin;
 
-const VCPU_MONTHLY_RATE: &str = "63.072";
-const MEMORY_GIB_MONTHLY_RATE: &str = "7.884";
 const MEBIBYTES_PER_GIBIBYTE: u32 = 1024;
 
 pub struct ContainerAppModel;
@@ -34,11 +33,26 @@ fn parse_memory_gib(raw: &str) -> Result<Decimal, PreciousError> {
 }
 
 impl ContainerAppModel {
+    /// Resolve region from the container app itself, or fall back to the
+    /// linked `azurerm_container_app_environment` in the same module.
+    fn resolve_region<'a>(resource: &'a TfResource, state: &'a State) -> Option<&'a str> {
+        // Container apps may have location directly (unlikely but check)
+        if let Some(loc) = resource.get_string("location") {
+            return Some(loc);
+        }
+
+        // Look up the environment resource in the same module
+        let addr = resource.address.to_string();
+        let env = state.find_sibling_by_type(&addr, "azurerm_container_app_environment")?;
+        env.get_string("location")
+    }
+
     async fn do_estimate(
         &self,
         resource: &TfResource,
         _usage: Option<&UsageEntry>,
-        _pricing: &dyn PricingClient,
+        pricing: &dyn PricingClient,
+        state: &State,
     ) -> Result<Vec<CostComponent>, PreciousError> {
         let cpu_raw = resource
             .get_nested_f64(&["template", "container", "cpu"])
@@ -70,12 +84,34 @@ impl ContainerAppModel {
         let has_range = max_replicas
             .is_some_and(|max| max > min_replicas);
 
-        let vcpu_rate: Decimal = VCPU_MONTHLY_RATE
-            .parse()
-            .expect("constant VCPU_MONTHLY_RATE must be valid Decimal");
-        let mem_rate: Decimal = MEMORY_GIB_MONTHLY_RATE
-            .parse()
-            .expect("constant MEMORY_GIB_MONTHLY_RATE must be valid Decimal");
+        let region =
+            Self::resolve_region(resource, state).ok_or_else(|| PreciousError::MissingField {
+                resource: resource.address.to_string(),
+                field: "location (or container_app_environment_id.location)".to_string(),
+            })?;
+
+        // Azure API service name is "Azure Container Apps", not "Container Apps"
+        // Pricing is per-second for consumption workload profiles
+        let vcpu_query = PriceQuery::azure("Azure Container Apps", region)
+            .filter("meterName", "Standard vCPU Active Usage")
+            .filter("skuName", "Standard")
+            .filter("priceType", "Consumption");
+        let vcpu_unit_price = pricing.query_price(&vcpu_query).await.map_err(|e| {
+            PreciousError::PricingError(format!("failed to get Container App vCPU price: {e}"))
+        })?;
+
+        let memory_query = PriceQuery::azure("Azure Container Apps", region)
+            .filter("meterName", "Standard Memory Active Usage")
+            .filter("skuName", "Standard")
+            .filter("priceType", "Consumption");
+        let memory_unit_price = pricing.query_price(&memory_query).await.map_err(|e| {
+            PreciousError::PricingError(format!("failed to get Container App memory price: {e}"))
+        })?;
+
+        // Prices are per-second; convert to monthly rate
+        let seconds_per_month = BillingPeriod::seconds_per_month();
+        let vcpu_rate = vcpu_unit_price.price.amount * seconds_per_month;
+        let mem_rate = memory_unit_price.price.amount * seconds_per_month;
 
         let vcpu_qty_min = cpu * min_replicas;
         let mem_qty_min = memory_gib * min_replicas;
@@ -129,7 +165,8 @@ impl ResourceCostModel for ContainerAppModel {
         resource: &'a TfResource,
         usage: Option<&'a UsageEntry>,
         pricing: &'a dyn PricingClient,
+        state: &'a State,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<CostComponent>, PreciousError>> + Send + 'a>> {
-        Box::pin(self.do_estimate(resource, usage, pricing))
+        Box::pin(self.do_estimate(resource, usage, pricing, state))
     }
 }
